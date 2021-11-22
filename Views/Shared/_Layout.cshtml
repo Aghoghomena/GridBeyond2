@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+    <!-- Favicons -->
+    <link href=@Url.Content("~/static/img/favicon.png") rel="icon">
+    <link href=@Url.Content("~/static/img/apple-touch-icon.png") rel="apple-touch-icon">
+    <link rel="stylesheet" href=@Url.Content("~/static/css/style.css")>
+    <link rel="stylesheet" href=@Url.Content("~/static/css/bootstrap.min.css")>
+    <link rel="stylesheet" href=@Url.Content("~/static/css/bootstrap-icons.css")>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+</head>
+<body>
+    <!-- ======= Header ======= -->
+    <header id="header" class="header fixed-top d-flex align-items-center">
+
+        <div class="d-flex align-items-center justify-content-between">
+            <a href="index.html" class="logo d-flex align-items-center">
+                <img src="../static/img/logo.png" alt="">
+                <span class="d-none d-lg-block">GridBeyond</span>
+            </a>
+            <i class="bi bi-list toggle-sidebar-btn"></i>
+        </div><!-- End Logo -->
+
+
+    </header><!-- End Header -->
+    <aside id="sidebar" class="sidebar">
+
+        <ul class="sidebar-nav" id="sidebar-nav">
+
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#">
+                    <i class="bi bi-grid"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li><!-- End Dashboard Nav -->
+        </ul>
+
+    </aside><!-- End Sidebar-->
+    <main id="main" class="main">
+        <div>
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="copyright">
+            &copy; Copyright <strong><span>GridBeyond</span></strong>. All Rights Reserved
+        </div>
+        <div class="credits">
+            Designed by <a href="#">Aghogho Joy Olokpa</a>
+        </div>
+    </footer><!-- End Footer -->
+
+    <script src=@Url.Content("~/static/js/bootstrap.bundle.js")></script>
+    <script src=@Url.Content("~/static/js/main.js")></script>
+  
+</body>
+</html>

@@ -1,0 +1,124 @@
+﻿<script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.11.3/datatables.min.css"/>
+<div class="pagetitle">
+    <h1>Dashboard</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item active">Dashboard</li>
+        </ol>
+    </nav>
+</div><!-- End Page Title -->
+
+<section class="section dashboard">
+    <div class="row">
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">File Upload </h5>
+                <div class="row mb-3">
+                    <label for="inputText" class="col-sm-4 col-form-label">Select File to Upload <span style="color: red;">*</span></label>
+                    <div class="col-sm-8">
+                        <input type="file" class="form-control" id="customFile" accept=".csv" />
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-4 col-form-label"></label>
+                    <div class="col-sm-8">
+                        <button type="button" class="btn btn-primary" id="upload"><i class="bi bi-arrow-up-short me-1"></i>Submit</button>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Data Uploaded </h5>
+                <table class="table datatable" id="myTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                   
+                    </tbody>
+                </table>
+
+
+            </div>
+        </div>
+
+
+
+
+    </div>
+</section>
+
+<script>
+    $(document).ready(function () {
+        $('#myTable').DataTable();
+
+    });
+    $('#upload').on('click', function (e) {
+        console.log("hit the app");
+        var data = new FormData();
+        var files = $("#customFile").get(0).files;
+        if (files.length > 0) {
+            console.log(files[0]);
+            //check the filetype
+            var ftype = files[0].type;
+            console.log(ftype);
+            if (ftype != 'application/vnd.ms-excel') {
+                alert('CSV or Excel files only!');
+                e.preventDefault();
+            }
+            data.append("myFile", files[0]);
+        }
+        else {
+            alert("Select a File");
+        }
+        var count = 0;
+        $.ajax({
+            url: "Home/ReadFile",
+            contentType: false,
+            processData: false,
+            type: 'POST',
+            data: data,
+            success: function (response) {
+                console.log(response);
+                if (response.statusCode === 200) {
+                    console.log(JSON.parse(response.data));
+                    //load the datatable
+                    let table = $("#myTable").DataTable();
+                    $.each(JSON.parse(response.data), function (index, value) {
+                        count++;
+                        var column1 = '<span>' + count + '</span>';
+                        var column2 = '<span>' + value.FormattedDate + '</span>';
+                        var column3 = '<span>' + value.Price + '</span>';
+
+
+                        rowNode = table
+                            .row.add([column1, column2, column3])
+                            .draw()
+                    })
+                }
+            },
+            error: function (response_error) {
+                console.log("an error occurred");
+                console.log(response_error);
+            }
+        });
+
+    })
+
+
+
+
+
+</script>
