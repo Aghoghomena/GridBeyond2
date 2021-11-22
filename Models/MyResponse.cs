@@ -9,5 +9,9 @@ namespace GridBeyond2.Models
     {
         public int? statusCode;
         public string data;
+        public double max;
+        public double min;
+        public double average;
+        public List<EWindow> mostExpensive;
     }
 }

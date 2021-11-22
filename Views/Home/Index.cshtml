@@ -37,34 +37,117 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Data Uploaded </h5>
-                <table class="table datatable" id="myTable">
+
+
+                <div class="row">
+
+                    <!-- Left side columns -->
+                    <div class="col-lg-8">
+                        <div class="row">
+
+                            <!-- Min Value Card -->
+                            <div class="col-xxl-4 col-md-6">
+                                <div class="card info-card sales-card">
+
+
+
+                                    <div class="card-body">
+                                        <h5 class="card-title">Minimum <span>| Value</span></h5>
+
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-cart"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6><span id="minvalue"></span></h6>
+
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div><!-- End Sales Card -->
+                            <!-- Maximum Card -->
+                            <div class="col-xxl-4 col-md-6">
+                                <div class="card info-card revenue-card">
+
+
+                                    <div class="card-body">
+                                        <h5 class="card-title">Maximum <span>| Value</span></h5>
+
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-currency-dollar"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6><span id="maxvalue"></span></h6>
+
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div><!-- End Revenue Card -->
+                            <!-- Average Card -->
+                            <div class="col-xxl-4 col-xl-12">
+
+                                <div class="card info-card customers-card">
+
+                                    <div class="card-body">
+                                        <h5 class="card-title">Average <span>| Price</span></h5>
+
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6><span id="avgvalue"></span></h6>
+
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                            </div><!-- End Customers Card -->
+                        </div>
+                    </div>
+                </div>
+
+
+               <span class="badge rounded-pill bg-primary"><span id="mostexpensivewindow"></span></span>
+
+
+                <table class="table datatable" id="myTable" style="width: 100%;" cellspacing="0">
                     <thead>
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Date</th>
                             <th scope="col">Price</th>
+                            <th scope="col">da</th>
                         </tr>
                     </thead>
-                    <tbody>
-                   
-                    </tbody>
+                    <tbody></tbody>
                 </table>
 
 
             </div>
-        </div>
+                    </div>
 
 
 
 
-    </div>
+                </div>
 </section>
 
 <script>
     $(document).ready(function () {
-        $('#myTable').DataTable();
+        //$('#myTable').DataTable();
+        bindDatatable();
+ 
 
     });
+        
     $('#upload').on('click', function (e) {
         console.log("hit the app");
         var data = new FormData();
@@ -85,7 +168,7 @@
         }
         var count = 0;
         $.ajax({
-            url: "Home/ReadFile",
+            url: "/Home/ReadFile",
             contentType: false,
             processData: false,
             type: 'POST',
@@ -93,20 +176,11 @@
             success: function (response) {
                 console.log(response);
                 if (response.statusCode === 200) {
-                    console.log(JSON.parse(response.data));
-                    //load the datatable
-                    let table = $("#myTable").DataTable();
-                    $.each(JSON.parse(response.data), function (index, value) {
-                        count++;
-                        var column1 = '<span>' + count + '</span>';
-                        var column2 = '<span>' + value.FormattedDate + '</span>';
-                        var column3 = '<span>' + value.Price + '</span>';
-
-
-                        rowNode = table
-                            .row.add([column1, column2, column3])
-                            .draw()
-                    })
+                    $("#minvalue").text(response.min);
+                    $("#maxvalue").text(response.max);
+                    $("#avgvalue").text(response.average);
+                    $("#mostexpensivewindow").text("From: " + response.mostExpensive[0].FromFormattedDate + " To date: " + response.mostExpensive[0].ToFormattedDate + " with price : " + response.mostExpensive[0].Price);
+                    $('#myTable').DataTable().ajax.reload();
                 }
             },
             error: function (response_error) {
@@ -116,6 +190,50 @@
         });
 
     })
+
+    function bindDatatable() {
+        datatable = datatable = $('#myTable')
+            .DataTable({
+           
+                "bServerSide": true,
+                "bProcessing": true,
+                "bSearchable": true,
+                "ajax": {
+                        url: "/Home/GetData",
+                        type: 'POST'
+                 },
+                "order": [[1, 'asc']],
+                "language": {
+                    "emptyTable": "No record found.",
+                    "processing":
+                        '<i class="fa fa-spinner fa-spin fa-3x fa-fw" style="color:#2a2b2b;"></i><span class="sr-only">Loading...</span> '
+                },
+                "columns": [
+                    {
+                        "data": "Id",
+                        "autoWidth": true,
+                        "searchable": false
+                    },
+                    {
+                        "data": "FormattedDate",
+                        "autoWidth": true,
+                        "searchable": true
+                    },
+                    {
+                        "data": "Price",
+                        "autoWidth": true,
+                        "searchable": true
+                    },
+                    {
+                        "data": "Date",
+                        "autoWidth": true,
+                        "searchable": true,
+                        "visible": false
+                    },
+                ]
+            });
+    } 
+    
 
 
 

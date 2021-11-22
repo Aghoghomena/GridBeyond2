@@ -32,10 +32,8 @@ namespace GridBeyond2.Controllers
                 HttpResponseMessage response = new HttpResponseMessage();
                 HttpFileCollectionBase files = Request.Files;
                 HttpPostedFileBase currentfile = files[0];
-                DataTable dt = new DataTable();
-                dt.Columns.Add("Date", typeof(DateTime));
-                dt.Columns.Add("FormattedDate", typeof(string));
-                dt.Columns.Add("Price", typeof(double));
+                List<MyData> result = new List<MyData>();
+                int count = 0;
                 string Fulltext;
                 using (StreamReader csvreader = new StreamReader(currentfile.InputStream))
                 {
@@ -49,29 +47,57 @@ namespace GridBeyond2.Controllers
                             {
                                 if (i == 0)
                                 {
-                                    //for (int j = 0; j < rowValues.Count(); j++)
-                                    //{
-                                    //    dt.Columns.Add(rowValues[j]); //add headers  
-                                    //}
                                 }
                                 else
                                 {
-                                    DataRow dr = dt.NewRow();
+                                    count++;
+                                    MyData md = new MyData();
                                     DateTime thedate = Convert.ToDateTime(rowValues[0]);
-                                    dt.Rows.Add(thedate, thedate.ToString("dddd, dd MMMM yyyy HH:mm:ss"), Math.Round(Convert.ToDouble(rowValues[1]), 2));
-
+                                    md.Date = thedate;
+                                    md.Id = count;
+                                    md.FormattedDate = thedate.ToString("dddd, dd MMMM yyyy HH:mm:ss");
+                                    md.Price = Math.Round(Convert.ToDouble(rowValues[1]), 2);
+                                    result.Add(md);
                                 }
                             }
                         }
 
                     }
                 }
-                Session["Data"] = dt;
-                DataTable dtTop = dt.Rows.Cast<DataRow>().Take(100).CopyToDataTable();
+             
+                Session.Add("SData", result);
                 MyResponse output = new MyResponse();
                 output.statusCode = 200;
-                output.data = JsonConvert.SerializeObject(dtTop);
-                //var deserializedResult = JsonConvert.SerializeObject({ status = 200, data = dtTop });
+                output.min = result.Min(x => x.Price);
+                output.max = result.Max(x => x.Price);
+                output.average = result.Average(x => x.Price);
+                //to get the most expensive window sort by date so they are consecutive, group where date difference is 30mins
+                List<MyData> cs = result.OrderBy(x => x.Date).ToList();
+                List<EWindow> ew = new List<EWindow>();
+                var groups = cs.GroupBy(x =>
+                {
+                    var stamp = x.Date;
+                    stamp = stamp.AddMinutes(-(stamp.Minute % 30));
+                    stamp = stamp.AddMilliseconds(-stamp.Millisecond - 1000 * stamp.Second);
+                    return stamp;
+                })
+                .Select(g => new { FromDate = g.Key, ToDate = g.Key.AddMinutes(30), FromFormattedDate = g.Key.ToString("dddd, dd MMMM yyyy HH:mm:ss"), ToFormattedDate = g.Key.AddMinutes(30).ToString("dddd, dd MMMM yyyy HH:mm:ss"), Price = g.Average(s => s.Price) })
+                .OrderByDescending(x=> x.Price).Take(1).ToList();
+
+                foreach (var s in groups)
+                {
+                    // simple remapping adding extra info to found dataset
+                    ew.Add(new EWindow
+                    {
+                        Id = 1,
+                        FromDate = s.FromDate,
+                        ToDate = s.ToDate,
+                        Price = s.Price,
+                        FromFormattedDate = s.FromFormattedDate,
+                        ToFormattedDate = s.ToFormattedDate,
+                    });
+                };
+                output.mostExpensive = ew;
                 return new System.Web.Mvc.JsonResult()
                 {
                     Data = output,
@@ -89,5 +115,81 @@ namespace GridBeyond2.Controllers
                 };
             }
         }
+
+
+        public JsonResult GetData(TableModel model)
+        {
+            try
+            {
+                if(Session["SData"] == null)
+                {
+                    return Json(new
+                    {
+                        model.sEcho,
+                        iTotalRecords = 0,
+                        iTotalDisplayRecords = 0,
+                        aaData = new List<MyData>(),
+                    }, JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    List<MyData> existingdata = Session["SData"] as List<MyData>;
+                    List<MyData> result = new List<MyData>();
+                    List<MyData> tblSearched = existingdata;
+                    //searching
+                    if (!string.IsNullOrEmpty(model.sSearch))
+                    {
+                        tblSearched = existingdata.Where(x => x.FormattedDate.Contains(model.sSearch.ToLower()) || x.Price.ToString() == model.sSearch).ToList();
+                    }
+                    //sorting
+                    var sortColumnIndex = Convert.ToInt32(HttpContext.Request.QueryString["iSortCol_0"]);
+                    var sortDirection = HttpContext.Request.QueryString["sSortDir_0"];
+                    if (sortColumnIndex == 1)
+                    {
+                        result = sortDirection == "asc" ? tblSearched.OrderBy(row => row.FormattedDate).ToList() : tblSearched.OrderByDescending(row => row.FormattedDate).ToList();
+                    }
+                    else if (sortColumnIndex == 2)
+                    {
+                        result = sortDirection == "asc" ? tblSearched.OrderBy(row => row.Price).ToList() : tblSearched.AsEnumerable().OrderByDescending(row => row.Price).ToList();
+                    }
+                    else
+                    {
+                        //Func<Employee, string> orderingFunction = e => sortColumnIndex == 0 ? e.Name : sortColumnIndex == 1 ? e.Position : e.Location;
+                        //employees = sortDirection == "asc" ? employees.OrderBy(orderingFunction) : employees.OrderByDescending(orderingFunction);
+                        result = sortDirection == "asc" ? tblSearched.OrderBy(row => row.Id).ToList() : tblSearched.OrderByDescending(row => row.Id).ToList();
+                    }
+
+                    //pagination
+                    var displayResult = result.Skip(model.iDisplayStart)
+                       .Take(10).ToList();
+                    var totalRecords = result.Count();
+
+
+                    return Json(new
+                    {
+                        model.sEcho,
+                        iTotalRecords = totalRecords,
+                        iTotalDisplayRecords = totalRecords,
+                        aaData = displayResult
+                    }, JsonRequestBehavior.AllowGet);
+
+                }
+
+            }
+            catch(Exception ex)
+            {
+                return Json(new
+                {
+                    model.sEcho,
+                    iTotalRecords = 0,
+                    iTotalDisplayRecords = 0,
+                    aaData  = new List<MyData>(),
+                }, JsonRequestBehavior.AllowGet);
+
+            }
+           
+        }
+
     }
 }
+
