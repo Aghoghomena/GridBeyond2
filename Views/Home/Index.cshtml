@@ -1,6 +1,6 @@
 ﻿<script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
 
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.11.3/datatables.min.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.11.3/datatables.min.css" />
 <div class="pagetitle">
     <h1>Dashboard</h1>
     <nav>
@@ -42,7 +42,7 @@
                 <div class="row">
 
                     <!-- Left side columns -->
-                    <div class="col-lg-8">
+                    <div class="col-lg-12">
                         <div class="row">
 
                             <!-- Min Value Card -->
@@ -115,39 +115,53 @@
                 </div>
 
 
-               <span class="badge rounded-pill bg-primary"><span id="mostexpensivewindow"></span></span>
+                <span class="badge rounded-pill bg-primary"><span id="mostexpensivewindow"></span></span>
 
+                <div class="row">
+                        <div class="col-lg-6">
+                            <canvas id="barChart" style="max-height: 400px;"></canvas>
 
-                <table class="table datatable" id="myTable" style="width: 100%;" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Date</th>
-                            <th scope="col">Price</th>
-                            <th scope="col">da</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-
-
-            </div>
-                    </div>
-
-
+                        </div>
+                        <div class="col-lg-6">
+                            <canvas id="doughnutChart" style="max-height: 400px;"></canvas>
+                        </div>
+                
+                </div>
+              
+                    <table class="table datatable" id="myTable" style="width: 100%;" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">da</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
 
 
                 </div>
+        </div>
+
+
+
+
+    </div>
 </section>
 
+<script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap.min.js"></script>
+<script src="~/static/js/chart.min.js"></script>
 <script>
     $(document).ready(function () {
         //$('#myTable').DataTable();
         bindDatatable();
- 
+
 
     });
-        
+
+    var label = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     $('#upload').on('click', function (e) {
         console.log("hit the app");
         var data = new FormData();
@@ -181,6 +195,8 @@
                     $("#avgvalue").text(response.average);
                     $("#mostexpensivewindow").text("From: " + response.mostExpensive[0].FromFormattedDate + " To date: " + response.mostExpensive[0].ToFormattedDate + " with price : " + response.mostExpensive[0].Price);
                     $('#myTable').DataTable().ajax.reload();
+                    loadFirstChat();
+
                 }
             },
             error: function (response_error) {
@@ -191,17 +207,99 @@
 
     })
 
+    function loadFirstChat() {
+
+        var chartdata = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        var pie_label = [];
+        var pie_value = [];
+        $.ajax({
+            url: "/Home/FirstChat",
+            type: 'GET',
+            success: function (response) {
+                console.log(response);
+                $.each(response.aaData, function (key, payment) {
+                    chartdata[payment.month - 1] = payment.Value;
+                    pie_label.push(payment.monthname);
+                    pie_value.push(payment.Value);
+                });
+                console.log(chartdata);
+                var barChartLocData = {
+                    labels: label,
+                    datasets: [{ fillColor: "lightblue", strokeColor: "blue", data: chartdata }]
+                };
+                //var mybarChartLoc = new Chart(document.getElementById("barChart").getContext("2d")).Bar(barChartLocData);
+                //load bar chart for each month in the year
+                new Chart(document.querySelector('#barChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: label,
+                        datasets: [{
+                            label: 'Bar Chart For the Year',
+                            data: chartdata,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.2)',
+                                'rgba(255, 159, 64, 0.2)',
+                                'rgba(255, 205, 86, 0.2)',
+                                'rgba(75, 192, 192, 0.2)',
+                                'rgba(54, 162, 235, 0.2)',
+                                'rgba(153, 102, 255, 0.2)',
+                                'rgba(201, 203, 207, 0.2)'
+                            ],
+                            borderColor: [
+                                'rgb(255, 99, 132)',
+                                'rgb(255, 159, 64)',
+                                'rgb(255, 205, 86)',
+                                'rgb(75, 192, 192)',
+                                'rgb(54, 162, 235)',
+                                'rgb(153, 102, 255)',
+                                'rgb(201, 203, 207)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                //load doughnut chart
+                new Chart(document.querySelector('#doughnutChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: pie_label,
+                        datasets: [{
+                            label: 'My Doughnut Chart',
+                            data: pie_value,
+                            backgroundColor: [
+                                'rgb(255, 99, 132)',
+                                'rgb(54, 162, 235)',
+                                'rgb(255, 205, 86)'
+                            ],
+                            hoverOffset: 4
+                        }]
+                    }
+                })
+
+            },
+            error: function (response_error) {
+                console.log("an error occurred");
+                console.log(response_error);
+            }
+        });
+    }
+
     function bindDatatable() {
         datatable = datatable = $('#myTable')
             .DataTable({
-           
+
                 "bServerSide": true,
                 "bProcessing": true,
                 "bSearchable": true,
-                "ajax": {
-                        url: "/Home/GetData",
-                        type: 'POST'
-                 },
+                "sAjaxSource": "/Home/GetData",
                 "order": [[1, 'asc']],
                 "language": {
                     "emptyTable": "No record found.",
@@ -232,8 +330,8 @@
                     },
                 ]
             });
-    } 
-    
+    }
+
 
 
 

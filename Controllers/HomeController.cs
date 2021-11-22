@@ -57,6 +57,8 @@ namespace GridBeyond2.Controllers
                                     md.Id = count;
                                     md.FormattedDate = thedate.ToString("dddd, dd MMMM yyyy HH:mm:ss");
                                     md.Price = Math.Round(Convert.ToDouble(rowValues[1]), 2);
+                                    md.Year = thedate.Year;
+                                    md.month = thedate.Month;
                                     result.Add(md);
                                 }
                             }
@@ -117,7 +119,7 @@ namespace GridBeyond2.Controllers
         }
 
 
-        public JsonResult GetData(TableModel model)
+        public JsonResult GetData(JqueryDatatableParam  model)
         {
             try
             {
@@ -144,11 +146,11 @@ namespace GridBeyond2.Controllers
                     //sorting
                     var sortColumnIndex = Convert.ToInt32(HttpContext.Request.QueryString["iSortCol_0"]);
                     var sortDirection = HttpContext.Request.QueryString["sSortDir_0"];
-                    if (sortColumnIndex == 1)
+                    if (sortColumnIndex == 0)
                     {
                         result = sortDirection == "asc" ? tblSearched.OrderBy(row => row.FormattedDate).ToList() : tblSearched.OrderByDescending(row => row.FormattedDate).ToList();
                     }
-                    else if (sortColumnIndex == 2)
+                    else if (sortColumnIndex == 3)
                     {
                         result = sortDirection == "asc" ? tblSearched.OrderBy(row => row.Price).ToList() : tblSearched.AsEnumerable().OrderByDescending(row => row.Price).ToList();
                     }
@@ -161,7 +163,7 @@ namespace GridBeyond2.Controllers
 
                     //pagination
                     var displayResult = result.Skip(model.iDisplayStart)
-                       .Take(10).ToList();
+                       .Take(model.iDisplayLength).ToList();
                     var totalRecords = result.Count();
 
 
@@ -188,6 +190,55 @@ namespace GridBeyond2.Controllers
 
             }
            
+        }
+
+        public JsonResult FirstChat(int? year)
+        {
+            try
+            {
+                if (Session["SData"] == null)
+                {
+                    return Json(new
+                    {
+
+                        aaData = new List<MyData>(),
+                    }, JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    List<MyData> existingdata = Session["SData"] as List<MyData>;
+                    year = year is null ? existingdata.Max(x => x.Year) : year;
+                    var data = existingdata.Where(x => x.Year == year).GroupBy(d => d.month)
+                            .Select(
+                                g => new
+                                {
+                                    Key = g.Key,
+                                    Value = Math.Round(g.Sum(s => s.Price)),
+                                    month = g.First().Date.Month,
+                                    monthname = g.First().Date.ToString("MMM"),
+                                });
+
+
+
+
+                    return Json(new
+                    {
+                        aaData = data,
+                    }, JsonRequestBehavior.AllowGet);
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                   
+                    aaData = new List<MyData>(),
+                }, JsonRequestBehavior.AllowGet);
+
+            }
+
         }
 
     }

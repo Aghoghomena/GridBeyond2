@@ -11,6 +11,8 @@ namespace GridBeyond2.Models
         public DateTime  Date { get; set; }
         public string FormattedDate { get; set; }
         public double Price { get; set; }
+        public int Year { get; set; }
+        public int month { get; set; }
     }
 
  

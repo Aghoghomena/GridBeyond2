@@ -5,7 +5,7 @@ using System.Web;
 
 namespace GridBeyond2.Models
 {
-    public class TableModel
+    public class JqueryDatatableParam
     {
         // properties are not capital due to json mapping
 

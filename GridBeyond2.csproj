@@ -164,7 +164,7 @@
     <Compile Include="Models\EWindow.cs" />
     <Compile Include="Models\Order.cs" />
     <Compile Include="Models\Search.cs" />
-    <Compile Include="Models\TableModel.cs" />
+    <Compile Include="Models\JqueryDatatableParam .cs" />
     <Compile Include="Models\MyData.cs" />
     <Compile Include="Models\MyResponse.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -200,6 +200,7 @@
     <Content Include="static\img\favicon.png" />
     <Content Include="static\img\logo.png" />
     <Content Include="static\js\bootstrap.bundle.js" />
+    <Content Include="static\js\chart.min.js" />
     <Content Include="static\js\main.js" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
