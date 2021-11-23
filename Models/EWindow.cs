@@ -13,5 +13,7 @@ namespace GridBeyond2.Models
         public string FromFormattedDate { get; set; }
         public string ToFormattedDate { get; set; }
         public double Price { get; set; }
+        public double FromPrice { get; set; }
+        public double ToPrice { get; set; }
     }
 }

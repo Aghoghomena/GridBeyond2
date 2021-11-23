@@ -160,6 +160,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\Aggregates.cs" />
     <Compile Include="Models\Column.cs" />
     <Compile Include="Models\EWindow.cs" />
     <Compile Include="Models\Order.cs" />

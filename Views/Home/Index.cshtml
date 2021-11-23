@@ -1,6 +1,7 @@
 ﻿<script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
 
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.11.3/datatables.min.css" />
+<link rel="stylesheet" href=@Url.Content("~/static/css/bootstrap-datetimepicker.min.css")>
 <div class="pagetitle">
     <h1>Dashboard</h1>
     <nav>
@@ -14,7 +15,8 @@
 <section class="section dashboard">
     <div class="row">
 
-        <div class="card">
+        @*File Upload Di*@v
+        <div class="card" id="formUpload">
             <div class="card-body">
                 <h5 class="card-title">File Upload </h5>
                 <div class="row mb-3">
@@ -34,11 +36,34 @@
             </div>
         </div>
 
-        <div class="card">
+        @*Data Div*@
+        <div class="card" id="formData" style="display:none;">
             <div class="card-body">
-                <h5 class="card-title">Data Uploaded </h5>
+
+                <div class="row">
+                    <div class="col-md-12" style="display:flex">
+                        <h5 class="card-title">Data Uploaded </h5>
+                        <span style="    margin-left: auto;"><a href="#" onclick="Reload();return false;" style="float:right;">Upload File </a></span>
+                    </div>
+                </div>
+                <div class="col-lg-12">
+                    <div class="row">
+                        <label for="fromdate" class="col-form-label">Date From: </label>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control" id="fromdate">
+                        </div>
+                        <label for="todate" class="col-sm-2 col-form-label">Date To: </label>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control pull-right" id="todate" name="todate">
+                        </div>
+                        <div class="col-sm-2">
+                            <button type="button" class="btn btn-primary btn-large" id="load">Load Data</button>
+                        </div>
+                    </div>
 
 
+                </div>
+                <br />
                 <div class="row">
 
                     <!-- Left side columns -->
@@ -118,30 +143,29 @@
                 <span class="badge rounded-pill bg-primary"><span id="mostexpensivewindow"></span></span>
 
                 <div class="row">
-                        <div class="col-lg-6">
-                            <canvas id="barChart" style="max-height: 400px;"></canvas>
+                    <div class="col-lg-6">
+                        <canvas id="barChart" style="max-height: 400px;"></canvas>
 
-                        </div>
-                        <div class="col-lg-6">
-                            <canvas id="doughnutChart" style="max-height: 400px;"></canvas>
-                        </div>
-                
-                </div>
-              
-                    <table class="table datatable" id="myTable" style="width: 100%;" cellspacing="0">
-                        <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Date</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">da</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-
+                    </div>
+                    <div class="col-lg-6">
+                        <canvas id="doughnutChart" style="max-height: 400px;"></canvas>
+                    </div>
 
                 </div>
+
+                <table class="table datatable" id="myTable" style="width: 100%;" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+
+            </div>
         </div>
 
 
@@ -152,7 +176,9 @@
 
 <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.2/moment.min.js"></script>
 <script src="~/static/js/chart.min.js"></script>
+<script src="~/static/js/bootstrap-datetimepicker.min.js"></script>
 <script>
     $(document).ready(function () {
         //$('#myTable').DataTable();
@@ -160,7 +186,44 @@
 
 
     });
+    //set from date to datepicker
+    $('#fromdate').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
 
+    //create color variable for graph
+    chart_colors= [
+        'rgba(255, 99, 132, 0.2)',
+        'rgba(255, 159, 64, 0.2)',
+        'rgba(255, 205, 86, 0.2)',
+        'rgba(75, 192, 192, 0.2)',
+        'rgba(54, 162, 235, 0.2)',
+        'rgba(153, 102, 255, 0.2)',
+        'rgba(201, 203, 207, 0.2)'
+    ];
+    //declare the barchart to update at read file or filter
+    var barchart = document.getElementById("barChart").getContext("2d");
+    var myChart = new Chart(barchart, {
+        type: 'bar',
+        data: []
+    })
+    //declare the piechart
+    
+    var piechart = document.getElementById("doughnutChart").getContext("2d");
+    var myChart2 = new Chart(piechart, {
+        type: 'doughnut',
+        data: []
+    })
+    $('#todate').datetimepicker({
+        useCurrent: false,
+        format: 'YYYY-MM-DD'
+    });
+    $("#fromdate").on("dp.change", function (e) {
+        $('#todate').data("DateTimePicker").minDate(e.date);
+    });
+    $("#todate").on("dp.change", function (e) {
+        $('#fromdate').data("DateTimePicker").maxDate(e.date);
+    });
     var label = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     $('#upload').on('click', function (e) {
         console.log("hit the app");
@@ -190,10 +253,19 @@
             success: function (response) {
                 console.log(response);
                 if (response.statusCode === 200) {
+                    $("#formUpload").hide();
+                    $("#formData").show();
                     $("#minvalue").text(response.min);
                     $("#maxvalue").text(response.max);
                     $("#avgvalue").text(response.average);
-                    $("#mostexpensivewindow").text("From: " + response.mostExpensive[0].FromFormattedDate + " To date: " + response.mostExpensive[0].ToFormattedDate + " with price : " + response.mostExpensive[0].Price);
+                    if (response.mostExpensive.length > 0) {
+                        $("#mostexpensivewindow").text("1) " + response.mostExpensive[0].ToFormattedDate + " " + response.mostExpensive[0].ToPrice + "\n 2) " + response.mostExpensive[0].FromFormattedDate + " " + response.mostExpensive[0].FromPrice);
+
+                    }
+                    else {
+                        $("#mostexpensivewindow").text("No window found");
+
+                    }
                     $('#myTable').DataTable().ajax.reload();
                     loadFirstChat();
 
@@ -208,82 +280,12 @@
     })
 
     function loadFirstChat() {
-
-        var chartdata = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        var pie_label = [];
-        var pie_value = [];
         $.ajax({
             url: "/Home/FirstChat",
             type: 'GET',
             success: function (response) {
                 console.log(response);
-                $.each(response.aaData, function (key, payment) {
-                    chartdata[payment.month - 1] = payment.Value;
-                    pie_label.push(payment.monthname);
-                    pie_value.push(payment.Value);
-                });
-                console.log(chartdata);
-                var barChartLocData = {
-                    labels: label,
-                    datasets: [{ fillColor: "lightblue", strokeColor: "blue", data: chartdata }]
-                };
-                //var mybarChartLoc = new Chart(document.getElementById("barChart").getContext("2d")).Bar(barChartLocData);
-                //load bar chart for each month in the year
-                new Chart(document.querySelector('#barChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: label,
-                        datasets: [{
-                            label: 'Bar Chart For the Year',
-                            data: chartdata,
-                            backgroundColor: [
-                                'rgba(255, 99, 132, 0.2)',
-                                'rgba(255, 159, 64, 0.2)',
-                                'rgba(255, 205, 86, 0.2)',
-                                'rgba(75, 192, 192, 0.2)',
-                                'rgba(54, 162, 235, 0.2)',
-                                'rgba(153, 102, 255, 0.2)',
-                                'rgba(201, 203, 207, 0.2)'
-                            ],
-                            borderColor: [
-                                'rgb(255, 99, 132)',
-                                'rgb(255, 159, 64)',
-                                'rgb(255, 205, 86)',
-                                'rgb(75, 192, 192)',
-                                'rgb(54, 162, 235)',
-                                'rgb(153, 102, 255)',
-                                'rgb(201, 203, 207)'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-
-                //load doughnut chart
-                new Chart(document.querySelector('#doughnutChart'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: pie_label,
-                        datasets: [{
-                            label: 'My Doughnut Chart',
-                            data: pie_value,
-                            backgroundColor: [
-                                'rgb(255, 99, 132)',
-                                'rgb(54, 162, 235)',
-                                'rgb(255, 205, 86)'
-                            ],
-                            hoverOffset: 4
-                        }]
-                    }
-                })
-
+                DrawChart(response);
             },
             error: function (response_error) {
                 console.log("an error occurred");
@@ -292,6 +294,60 @@
         });
     }
 
+    function ReloadChart(from, to) {
+        $.ajax({
+            url: "/Home/FirstChat",
+            type: 'POST',
+            data: { 'from': from, 'to': to },
+            success: function (response) {
+                console.log(response);
+                DrawChart(response);
+            },
+            error: function (response_error) {
+                console.log("an error occurred");
+                console.log(response_error);
+            }
+        });
+    }
+
+    function DrawChart(response) {
+        var chartdata = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        var pie_label = [];
+        var pie_value = [];
+                $.each(response.aaData, function (key, payment) {
+                    chartdata[payment.month - 1] = payment.Value;
+                    pie_label.push(payment.monthname);
+                    pie_value.push(payment.Value);
+                });
+            console.log(chartdata);
+            var barChartLocData = {
+                labels: label,
+                datasets: [{
+                    data: chartdata, label: "Bar Chart for the year", backgroundColor: chart_colors, options: {scales: {y: {beginAtZero: true}}} }]
+            };
+
+            var pieData = {
+                labels: pie_label,
+                datasets: [{ data: pie_value, label: "Dougnut chart", backgroundColor: chart_colors, hoverOffset: 4 }]
+            };
+            myChart.destroy();
+
+            myChart = new Chart(barchart, {
+                type: 'bar',
+                data: barChartLocData,
+            });
+
+            //reload donught 
+            //load bar chart for each month in the year
+            myChart2.destroy();
+
+            myChart2 = new Chart(piechart, {
+                type: 'doughnut',
+                data: pieData,
+            });
+
+
+    }
     function bindDatatable() {
         datatable = datatable = $('#myTable')
             .DataTable({
@@ -300,7 +356,7 @@
                 "bProcessing": true,
                 "bSearchable": true,
                 "sAjaxSource": "/Home/GetData",
-                "order": [[1, 'asc']],
+                "aaSorting": [[0, 'asc']],
                 "language": {
                     "emptyTable": "No record found.",
                     "processing":
@@ -309,6 +365,7 @@
                 "columns": [
                     {
                         "data": "Id",
+                        "name": "Id",
                         "autoWidth": true,
                         "searchable": false
                     },
@@ -320,19 +377,65 @@
                     {
                         "data": "Price",
                         "autoWidth": true,
-                        "searchable": true
-                    },
-                    {
-                        "data": "Date",
-                        "autoWidth": true,
                         "searchable": true,
-                        "visible": false
+                        "name": "Price",
                     },
                 ]
             });
     }
 
+ 
 
+    //function to reupload
+    function Reload() {
+        $("#formUpload").show();
+        $("#formData").hide();
+    }
+
+    //load date range
+    $('#load').on('click', function (e) {
+        var from = $('#fromdate').val();
+        var to = $('#todate').val();
+        console.log(to);
+        console.log(from);
+        if (from == null || to == null) {
+            e.preventDefault();
+        }
+        else {
+
+            //reload chart
+            ReloadChart(from, to);
+
+            //reload aggregates
+            $.ajax({
+                url: "/Home/filterData",
+                type: 'POST',
+                data: { 'from': from, 'to': to },
+                success: function (response) {
+                    $("#formUpload").hide();
+                    $("#formData").show();
+                    $("#minvalue").text(response.min);
+                    $("#maxvalue").text(response.max);
+                    $("#avgvalue").text(response.average);
+                    if (response.mostExpensive.count > 0) {
+                        $("#mostexpensivewindow").text("1) " + response.mostExpensive[0].ToFormattedDate + " " + response.mostExpensive[0].ToPrice + "\n 2) " + response.mostExpensive[0].FromFormattedDate + " " + response.mostExpensive[0].FromPrice);
+
+                    }
+                    else {
+                        $("#mostexpensivewindow").text("No window found");
+
+                    }
+           
+
+                },
+                error: function (response_error) {
+                    console.log("an error occurred");
+                    console.log(response_error);
+                }
+            });
+
+        }
+    })
 
 
 
